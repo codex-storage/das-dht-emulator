@@ -8,8 +8,10 @@
 
 import
   std/[tables, deques, random],
-  chronos,
   chronicles
+
+# we can't import chronos directly, as patchFile would create a loop
+import chronos/[asyncloop, asyncsync, handles, transport, timer, debugutils]
 
 logScope:
   topics = "ChronoSim"
@@ -20,10 +22,10 @@ const
 
 # chronos uses SomeIntegerI64. We shoudl be more specific here to override
 proc milliseconds*(v: int): Duration {.inline.} =
-  chronos.milliseconds(v * timeWarp)
+  timer.milliseconds(v * timeWarp)
 
 proc seconds*(v: int): Duration {.inline.} =
-  chronos.seconds(v * timeWarp)
+  timer.seconds(v * timeWarp)
 
 when(emulateDatagram): #enable network emulator
   type
@@ -112,3 +114,10 @@ export TransportAddress, initTAddress
 export async, sleepAsync, complete, await
 export Future, FutureBase, newFuture, futureContinue
 export TransportOsError
+
+# export copied from chronos, except transport
+export asyncloop, asyncsync, handles, timer, debugutils
+
+# export copied chronos/transport except what we replace
+export common, stream, ipnet, osnet
+export asyncstream, chunkstream
