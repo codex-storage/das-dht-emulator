@@ -3,3 +3,6 @@ switch("define", "libp2p_pki_schemes=secp256k1")
 when fileExists("nimble.paths"):
   include "nimble.paths"
 # end Nimble config
+
+# required on Linux for pthreads
+--threads:on
