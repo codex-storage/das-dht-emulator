@@ -116,7 +116,6 @@ when isMainModule:
 
     # generate block and push data
     info "starting upload to DHT"
-    let startTime = Moment.now()
     var futs = newSeq[Future[seq[Node]]]()
     for s in 0 ..< blocksize:
       let
@@ -127,8 +126,10 @@ when isMainModule:
 
       futs.add(nodes[0][0].addValue(key, segment))
 
-    let pass = await allFutures(futs).withTimeout(upload_timeout)
-    info "uploaded to DHT", by = 0, pass, time = Moment.now() - startTime
+    let
+      allFinished = allFutures(futs).withTimeout(upload_timeout)
+      pass = await allFinished
+    info "uploaded to DHT", by = 0, pass, time = allFinished.duration
 
     # sample
     proc startSamplingDA(n: discv5_protocol.Protocol): seq[Future[DiscResult[seq[byte]]]] =
