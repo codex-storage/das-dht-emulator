@@ -149,7 +149,7 @@ when isMainModule:
     await sleepAsync(sampling_delay)
 
     # sample
-    proc startSamplingDA(n: discv5_protocol.Protocol): seq[Future[DiscResult[seq[byte]]]] =
+    proc startSamplingDA(n: discv5_protocol.Protocol): (seq[int], seq[Future[DiscResult[seq[byte]]]]) =
       ## Generate random sample and start the sampling process
       var futs = newSeq[Future[DiscResult[seq[byte]]]]()
 
@@ -158,12 +158,12 @@ when isMainModule:
       for s in sample:
         let fut = n.getValue(segmentIDs[s])
         futs.add(fut)
-      return futs
+      return (sample, futs)
 
     proc sampleDA(n: discv5_protocol.Protocol): Future[(bool, int, Duration)] {.async.} =
       ## Sample and return detailed results of sampling
       let startTime = Moment.now()
-      var futs = startSamplingDA(n)
+      var (sample, futs) = startSamplingDA(n)
 
       # test is passed if all segments are retrieved in time
       discard await allFutures(futs).withTimeout(sampling_timeout)
@@ -171,6 +171,9 @@ when isMainModule:
       for i in 0 ..< futs.len:
         if futs[i].finished() and isOk(await futs[i]):
           passcount += 1
+        else:
+          info "sample failed", by = n.localNode, s = sample[i], key = segmentIDs[sample[i]]
+
 
       let
         time = Moment.now() - startTime
