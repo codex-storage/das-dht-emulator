@@ -110,12 +110,12 @@ when isMainModule:
       filename: string
     assert(log2(blocksize.float).ceil.int <= segmentsize * 8 )
     assert(samplesize <= blocksize)
-
     var
       segmentIDs = newSeq[NodeId](blocksize)
 
     # start network
     let
+
       rng = newRng()
       nodes = await bootstrapNetwork(nodecount=nodecount, delay=delay_pernode)
 
@@ -124,6 +124,7 @@ when isMainModule:
     await sleepAsync(delay_init)
 
     let uploadStartTime = Moment.now()
+
     # generate block and push data
     info "starting upload to DHT"
     var uploads = newSeq[Future[seq[Node]]]()
@@ -133,7 +134,6 @@ when isMainModule:
         key = toNodeId(segment)
 
       segmentIDs[s] = key
-
     # start measuring time
       let upload = nodes[0][0].addValue(key, segment)
       upload.addCallback proc(udata: pointer) =
@@ -152,6 +152,7 @@ when isMainModule:
     await sleepAsync(sampling_delay)
 
     # sample
+    info "starting sampling"
     proc sampleOne(sampler: discv5_protocol.Protocol, cid: NodeId, startdelay: Duration = 0.milliseconds) : Future[DiscResult[seq[byte]]] {.async.} =
       await sleepAsync(startdelay)
       return await sampler.findValue(cid)
