@@ -102,6 +102,7 @@ when isMainModule:
       samplesize = 3
       sampling_timeout = 5.seconds
       samplethreshold = samplesize
+      sampling_jitter = 50000 # in microseconds
       delay_init = 60.minutes
       upload_timeout = 4.seconds
       sampling_delay = 4.seconds
@@ -160,7 +161,7 @@ when isMainModule:
       let sample = sample(0 ..< blocksize, samplesize)
       debug "starting sampling", by = n, sample
       for s in sample:
-        let fut = n.sampleOne(segmentIDs[s])
+        let fut = n.sampleOne(segmentIDs[s], rand(0 .. sampling_jitter).microseconds)
         futs.add(fut)
       return (sample, futs)
 
