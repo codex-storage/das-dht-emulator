@@ -100,9 +100,10 @@ when isMainModule:
       blocksize = 256
       segmentsize = 2
       samplesize = 3
-      upload_timeout = 5.seconds
       sampling_timeout = 5.seconds
       delay_init = 60.minutes
+      upload_timeout = 4.seconds
+      sampling_delay = 4.seconds
     assert(log2(blocksize.float).ceil.int <= segmentsize * 8 )
     assert(samplesize <= blocksize)
 
@@ -118,9 +119,10 @@ when isMainModule:
     info "waiting for DHT to settle"
     await sleepAsync(delay_init)
 
+    let uploadStartTime = Moment.now()
     # generate block and push data
     info "starting upload to DHT"
-    var futs = newSeq[Future[seq[Node]]]()
+    var uploads = newSeq[Future[seq[Node]]]()
     for s in 0 ..< blocksize:
       let
         segment = segmentData(s, segmentsize)
@@ -128,12 +130,22 @@ when isMainModule:
 
       segmentIDs[s] = key
 
-      futs.add(nodes[0][0].addValue(key, segment))
+    # start measuring time
+      let upload = nodes[0][0].addValue(key, segment)
+      upload.addCallback proc(udata: pointer) =
+        info "uploaded to DHT", by = 0, time = Moment.now() - uploadStartTime 
+      uploads.add(upload)
 
     let
-      allFinished = allFutures(futs).withTimeout(upload_timeout)
-      pass = await allFinished
-    info "uploaded to DHT", by = 0, pass, time = allFinished.duration
+      uploadFinishedByTimeout = allFutures(uploads).withTimeout(upload_timeout)
+      uploadAllFinished = allFutures(uploads)
+    # info "uploaded to DHT", by = 0, pass, time = allFinished.duration
+    uploadFinishedByTimeout.addCallback proc(udata: pointer) =
+      info "uploaded to DHT by timeout", by = 0, time = uploadFinishedByTimeout.duration
+    uploadAllFinished.addCallback proc(udata: pointer) =
+      info "uploaded to DHT all", by = 0, time = uploadAllFinished.duration
+
+    await sleepAsync(sampling_delay)
 
     # sample
     proc startSamplingDA(n: discv5_protocol.Protocol): seq[Future[DiscResult[seq[byte]]]] =
