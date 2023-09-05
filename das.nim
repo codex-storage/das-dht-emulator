@@ -1,5 +1,5 @@
 import
-  std/[random, math],
+  std/[random, math, strformat],
   chronicles,
   chronos,
   libp2pdht/discv5/crypto as dhtcrypto,
@@ -94,7 +94,7 @@ proc sample(s: Slice[int], len: int): seq[int] =
 
 when isMainModule:
   proc main() {.async.} =
-    let
+    var
       nodecount = 100
       delay_pernode = 10 # in millisec
       blocksize = 256
@@ -106,6 +106,7 @@ when isMainModule:
       delay_init = 60.minutes
       upload_timeout = 4.seconds
       sampling_delay = 4.seconds
+      filename: string
     assert(log2(blocksize.float).ceil.int <= segmentsize * 8 )
     assert(samplesize <= blocksize)
 
@@ -186,23 +187,34 @@ when isMainModule:
       info "sample", by = n.localNode, pass, cnt = passcount, time
       return (pass, passcount, time)
 
-    # all nodes start sampling in parallel
-    var samplings = newSeq[Future[(bool, int, Duration)]]()
-    for n in 1 ..< nodecount:
-      samplings.add(sampleDA(nodes[n][0]))
-    await allFutures(samplings)
+    proc sampleDAMany() {.async.} =
+      # all nodes start sampling in parallel
+      var samplings = newSeq[Future[(bool, int, Duration)]]()
+      for n in 1 ..< nodecount:
+        samplings.add(sampleDA(nodes[n][0]))
+      await allFutures(samplings)
 
-    # print statistics
-    var
-      passed = 0
-    for f in samplings:
-      if f.finished():
-        let (pass, passcount, time) = await f
-        passed += pass.int
-        debug "sampleStats", pass, cnt = passcount, time
-      else:
-        error "This should not happen!"
-    info "sampleStats", passed, total = samplings.len, ratio = passed/samplings.len
+      # print statistics
+      let csvFile = open(fmt"{filename}.csv", fmWrite)
+      defer: csvFile.close()
+
+      var
+        passed = 0
+      for f in samplings:
+        if f.finished():
+          let (pass, passcount, time) = await f
+          passed += pass.int
+          debug "sampleStats", pass, cnt = passcount, time
+          if pass:
+            csvFile.writeLine(time.milliseconds)
+          else:
+            csvFile.writeLine("100000") # using large value here as Gnuplot has issues with NaN
+        else:
+          error "This should not happen!"
+      info "sampleStats", passed, total = samplings.len, ratio = passed/samplings.len
+
+    filename = fmt"n{nodecount},dpn{delay_pernode},dinit{delay_init},bs{blocksize},ss{samplesize},sthr{samplethreshold}" 
+    await sampleDAMany()
 
   waitfor main()
 
