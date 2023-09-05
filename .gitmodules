@@ -1,9 +1,9 @@
 [submodule "vendor/nimbus-build-system"]
 	path = vendor/nimbus-build-system
 	url = https://github.com/status-im/nimbus-build-system.git
-[submodule "vendor/nim-libp2p-dht"]
-	path = vendor/nim-libp2p-dht
-	url = https://github.com/codex-storage/nim-libp2p-dht.git
+[submodule "vendor/nim-codex-dht"]
+	path = vendor/nim-codex-dht
+	url = https://github.com/codex-storage/nim-codex-dht.git
 [submodule "vendor/nim-chronicles"]
 	path = vendor/nim-chronicles
 	url = https://github.com/status-im/nim-chronicles.git
