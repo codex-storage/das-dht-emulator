@@ -9,6 +9,10 @@ import
 
 logScope:
   topics = "DAS emulator"
+  simTime = Moment.now() - simStartTime
+
+let 
+  simStartTime = Moment.now()
 
 proc bootstrapNodes(
     nodecount: int,
