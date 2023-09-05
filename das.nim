@@ -95,7 +95,8 @@ proc sample(s: Slice[int], len: int): seq[int] =
 when isMainModule:
   proc main() {.async.} =
     var
-      nodecount = 100
+      nodecount = 1000 ## up to 12000 (500+sec)
+      samplingnodes = 200 # nodecount-1
       delay_pernode = 10 # in millisec
       blocksize = 256
       segmentsize = 2
@@ -190,7 +191,7 @@ when isMainModule:
     proc sampleDAMany() {.async.} =
       # all nodes start sampling in parallel
       var samplings = newSeq[Future[(bool, int, Duration)]]()
-      for n in 1 ..< nodecount:
+      for n in sample(1 ..< nodecount, samplingnodes):
         samplings.add(sampleDA(nodes[n][0]))
       await allFutures(samplings)
 
@@ -213,7 +214,7 @@ when isMainModule:
           error "This should not happen!"
       info "sampleStats", passed, total = samplings.len, ratio = passed/samplings.len
 
-    filename = fmt"n{nodecount},dpn{delay_pernode},dinit{delay_init},bs{blocksize},ss{samplesize},sthr{samplethreshold}" 
+    filename = fmt"n{nodecount},sn{samplingnodes},dpn{delay_pernode},dinit{delay_init},bs{blocksize},ss{samplesize},sthr{samplethreshold}" 
     await sampleDAMany()
 
   waitfor main()
