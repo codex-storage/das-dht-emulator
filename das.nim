@@ -101,6 +101,7 @@ when isMainModule:
       segmentsize = 2
       samplesize = 3
       sampling_timeout = 5.seconds
+      samplethreshold = samplesize
       delay_init = 60.minutes
       upload_timeout = 4.seconds
       sampling_delay = 4.seconds
@@ -165,13 +166,15 @@ when isMainModule:
       var futs = startSamplingDA(n)
 
       # test is passed if all segments are retrieved in time
-      let pass = await allFutures(futs).withTimeout(sampling_timeout)
+      discard await allFutures(futs).withTimeout(sampling_timeout)
       var passcount: int
-      for f in futs:
-        if f.finished():
+      for i in 0 ..< futs.len:
+        if futs[i].finished() and isOk(await futs[i]):
           passcount += 1
 
-      let time = Moment.now() - startTime
+      let
+        time = Moment.now() - startTime
+        pass = (passcount >= samplethreshold)
       info "sample", by = n.localNode, pass, cnt = passcount, time
       return (pass, passcount, time)
 
