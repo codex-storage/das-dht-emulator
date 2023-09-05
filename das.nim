@@ -149,6 +149,10 @@ when isMainModule:
     await sleepAsync(sampling_delay)
 
     # sample
+    proc sampleOne(sampler: discv5_protocol.Protocol, cid: NodeId, startdelay: Duration = 0.milliseconds) : Future[DiscResult[seq[byte]]] {.async.} =
+      await sleepAsync(startdelay)
+      return await sampler.findValue(cid)
+
     proc startSamplingDA(n: discv5_protocol.Protocol): (seq[int], seq[Future[DiscResult[seq[byte]]]]) =
       ## Generate random sample and start the sampling process
       var futs = newSeq[Future[DiscResult[seq[byte]]]]()
@@ -156,7 +160,7 @@ when isMainModule:
       let sample = sample(0 ..< blocksize, samplesize)
       debug "starting sampling", by = n, sample
       for s in sample:
-        let fut = n.getValue(segmentIDs[s])
+        let fut = n.sampleOne(segmentIDs[s])
         futs.add(fut)
       return (sample, futs)
 
