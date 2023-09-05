@@ -94,12 +94,12 @@ when isMainModule:
     let
       nodecount = 100
       delay_pernode = 10 # in millisec
-      delay_init = 15*1000 # in millisec
       blocksize = 256
       segmentsize = 2
       samplesize = 3
       upload_timeout = 5.seconds
       sampling_timeout = 5.seconds
+      delay_init = 60.minutes
     assert(log2(blocksize.float).ceil.int <= segmentsize * 8 )
     assert(samplesize <= blocksize)
 
@@ -112,7 +112,8 @@ when isMainModule:
       nodes = await bootstrapNetwork(nodecount=nodecount, delay=delay_pernode)
 
     # wait for network to settle
-    await sleepAsync(chronos.milliseconds(delay_init))
+    info "waiting for DHT to settle"
+    await sleepAsync(delay_init)
 
     # generate block and push data
     info "starting upload to DHT"
