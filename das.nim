@@ -98,15 +98,15 @@ when isMainModule:
       nodecount = 1000 ## up to 12000 (500+sec)
       samplingnodes = 200 # nodecount-1
       delay_pernode = 10 # in millisec
-      blocksize = 256
+      blocksize = 32*32 ## up to 128x128
       segmentsize = 2
-      samplesize = 3
-      sampling_timeout = 5.seconds
+      samplesize = 70
       samplethreshold = samplesize
       sampling_jitter = 50000 # in microseconds
       delay_init = 60.minutes
       upload_timeout = 4.seconds
       sampling_delay = 4.seconds
+      sampling_timeout = 8.seconds
       filename: string
     assert(log2(blocksize.float).ceil.int <= segmentsize * 8 )
     assert(samplesize <= blocksize)
